@@ -38,25 +38,27 @@ void setColorInit()
 }
 mode_t getFileMode(char* name)
 {
-	struct stat* buf;
+	struct stat buf;
 	string path=pwd;
 	path+="/";
 	path+=name;
 
-	int ret=stat(path.c_str(),buf);
+
+	int ret=stat(path.c_str(),&buf);
 	if(ret!=0)
 	{
 		perror("stat");
 		exit(1);
 	}
 
-	return buf->st_mode;
+	return buf.st_mode;
 
 }
 bool IsExcute(mode_t md)
 {
-	if(md==S_IRWXU || md==S_IXUSR || md==S_IRWXG || md==S_IXGRP || md==S_IRWXO || md==S_IXOTH)
-		return true;
+	if(md&S_IXUSR || md&S_IXGRP || md&S_IXOTH)
+	return true;
+
 }
 bool IsCompressed(char *name)
 {
@@ -157,6 +159,14 @@ void checkFileType(int type,char* name)
 	switch(type)
 	{
 		case DT_UNKNOWN:
+
+			if(strstr(name,".git"))
+			{
+				//깃디렉터리예외처리
+				fileType=DIR_FILE;
+				color=34;
+				break;
+			}
 			//일반파일잠시보류
 			md=getFileMode(name);
 			if(IsExcute(md))
@@ -166,7 +176,7 @@ void checkFileType(int type,char* name)
 			else if(IsImage(name))
 				color=35;
 			else
-				color=30;
+				color=0;
 			break;
 		case DT_FIFO:
 			fileType=FIFO_FILE;
